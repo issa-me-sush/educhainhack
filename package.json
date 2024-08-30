@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ethereum-attestation-service/eas-sdk": "^2.1.4",
+    "@jiffy-labs/web3a": "^0.1.7",
     "@privy-io/react-auth": "^1.73.0",
     "@privy-io/server-auth": "^1.7.4",
     "@privy-io/wagmi": "^0.2.10",

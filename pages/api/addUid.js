@@ -1,6 +1,6 @@
 // pages/api/addUid.js
 import dbConnect from '../../utils/dbConnect';
-import UidModel from '../../models/UidModel';
+import UidModel from '../../models/Uids';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {

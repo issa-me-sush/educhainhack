@@ -12,40 +12,47 @@ import { createPimlicoPaymasterClient, createPimlicoBundlerClient } from "permis
 import { createPublicClient, decodeErrorResult, http } from "viem";
 import useUserWallets from "./useUserWallets";
 import { schema } from "../constants/constants";
-import { createSmartAccountClient } from "permissionless"
-import { signerToSimpleSmartAccount } from "permissionless/accounts"
+import { createSmartAccountClient } from "permissionless";
+import { signerToSimpleSmartAccount } from "permissionless/accounts";
 import { openCampusCodex } from "../utils/educhain";
-import { getContract, parseEther } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
+import { getContract, parseEther } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { JiffyPaymaster } from "@jiffy-labs/web3a";
+
 const BUNDLER_PAYMASTER_URL = process.env.NEXT_PUBLIC_BUNDLER_PAYMASTER_RPC as string;
 const BUNDLER_URL = process.env.NEXT_PUBLIC_BUNDLER_URL as string;
 const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL as string;
-const jiffyscanKey = process.env.NEXT_PUBLIC_JIFFYSCAN_API_KEY as string;
+// const jiffyscanKey = process.env.NEXT_PUBLIC_JIFFYSCAN_API_KEY as string;
+const jiffyscanKey = "dP3k2sPIuj4dXcoGoidvE6zS2AxMUNqx2CChZmFo"
 const publicClient = createPublicClient({
     transport: http("https://rpc.open-campus-codex.gelato.digital"),
-})
+});
 
-const paymasterClient = createPimlicoPaymasterClient({
-    entryPoint: ENTRYPOINT_ADDRESS_V07,
-    transport: http(PAYMASTER_URL, {
-                    fetchOptions: {
-                        headers: { "x-api-key": jiffyscanKey },
-                    },
-                }),
-})
+// const paymasterClient = createPimlicoPaymasterClient({
+//     entryPoint: ENTRYPOINT_ADDRESS_V07,
+//     transport: http(PAYMASTER_URL, {
+//                     fetchOptions: {
+//                         headers: { "x-api-key": jiffyscanKey },
+//                     },
+//                 }),
+// })
+
+const jiffyPaymaster = new JiffyPaymaster("https://paymaster.jiffyscan.xyz", 656476, {
+    "x-api-key": jiffyscanKey,
+});
 
 const pimlicoBundlerClient = createPimlicoBundlerClient({
     transport: http(BUNDLER_URL, {
-                    fetchOptions: {
-                        headers: { "x-api-key": jiffyscanKey },
-                    },
-                }),
+        fetchOptions: {
+            headers: { "x-api-key": jiffyscanKey },
+        },
+    }),
     entryPoint: ENTRYPOINT_ADDRESS_V07,
-})
+});
 
 const schemaRegistryContractAddress = "0xa5B27215410c4bb50e3Be57E5add89b0089Aa358"; // opencampus-codex
 const schemaRegistry = new SchemaRegistry(schemaRegistryContractAddress);
-// const resolverAddress = "0x4200000000000000000000000000000000000020"; // 
+// const resolverAddress = "0x4200000000000000000000000000000000000020"; //
 const eas = "0x804199DD6A63e70424Db203b1Fa26b2FaaC1DC97" as `0x${string}`; // opencampus-codex
 const revocable = false;
 
@@ -99,7 +106,6 @@ const useEas = () => {
                 //     kernelVersion: "0.3.0",
                 // });
 
-
                 // const paymasterClient = createPimlicoPaymasterClient({
                 //     transport: http(BUNDLER_PAYMASTER_URL),
                 //     entryPoint: ENTRYPOINT_ADDRESS_V07,
@@ -124,24 +130,39 @@ const useEas = () => {
                 const simpleAccount = await signerToSimpleSmartAccount(publicClient, {
                     signer: smartAccountSigner,
                     entryPoint: ENTRYPOINT_ADDRESS_V07,
-                    factoryAddress: "0x91E60e0613810449d098b0b5Ec8b51A0FE8c8985",
-                })
+                    factoryAddress: "0xAe935f0dd79eAf68d516E7aBBa88a58eE69313a1",
+                });
+                console.log("in use EAS")
+                console.log("in use EAS")
+                console.log("api key:",jiffyscanKey)
                 const smartAccountClient = createSmartAccountClient({
                     account: simpleAccount,
                     entryPoint: ENTRYPOINT_ADDRESS_V07,
                     chain: openCampusCodex,
                     bundlerTransport: http(BUNDLER_URL, {
-                    fetchOptions: {
-                        headers: { "x-api-key": jiffyscanKey },
-                    },
-                }),
+                        fetchOptions: {
+                            headers: { "x-api-key": jiffyscanKey },
+                        },
+                    }),
                     middleware: {
-                        sponsorUserOperation: paymasterClient.sponsorUserOperation, // optional
-                        gasPrice: async () => (await pimlicoBundlerClient.getUserOperationGasPrice()).fast, // if using pimlico bundler
+                        sponsorUserOperation: async (args) => {
+                            const sponsoredUserOperation = await jiffyPaymaster.sponsorUserOperationV7({
+                                userOperation: args.userOperation,
+                                entryPoint: ENTRYPOINT_ADDRESS_V07,
+                            });
+                            return sponsoredUserOperation;
+                        },
+                        gasPrice: async () => {
+                            const bundlerClient = createPimlicoBundlerClient({
+                                transport: http(BUNDLER_URL),
+                                entryPoint: ENTRYPOINT_ADDRESS_V07,
+                            });
+                            return (await bundlerClient.getUserOperationGasPrice()).fast;
+                        },
                     },
-                })
+                });
                 // setAccountClient(kernelClient);
-                setAccountClient(smartAccountClient)
+                setAccountClient(smartAccountClient);
 
                 // console.log("smart wallet address :", account.address);
                 console.log("smart wallet address :", simpleAccount.address);
@@ -203,9 +224,9 @@ const useEas = () => {
         );
         const schemaEncoder = new SchemaEncoder(schema);
         // const schemaUID = getSchemaUID(schema, "0x0000000000000000000000000000000000000000", false) as `0x${string}`;
-        const schemaUID = "0x77525ac84dee48aae1f655ca3285169ca0adfc435a4852388ddd50e66c90a1ef"
-
-        console.log("schemaUID", schemaUID);
+        const schemaUID = "0x77525ac84dee48aae1f655ca3285169ca0adfc435a4852388ddd50e66c90a1ef";
+    
+        console.log("schemaUID and api key", schemaUID , jiffyscanKey);
         console.log(github_url, maintainer_github_id, remark, contributor_github_id);
         const data = schemaEncoder.encodeData([
             { name: "github_url", value: github_url, type: "string" },
@@ -242,22 +263,22 @@ const useEas = () => {
 
             console.log("Transaction successful, tx:", tx);
             // @ts-ignore  - getting uid
-            const receipt = await tx.wait(); // Wait for the transaction to be mined
-            console.log("tx receipt",receipt)
+            // const receipt = await tx.wait(); // Wait for the transaction to be mined
+            // console.log("tx receipt", receipt);
 
-            const attestationUID = receipt.logs[0].topics[2];
+            // const attestationUID = receipt.logs[0].topics[2];
 
-            //tracking uid
-            const response = await fetch('/api/addUid', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ uid: attestationUID }),
-            });
+            // //tracking uid
+            // const response = await fetch("/api/addUid", {
+            //     method: "POST",
+            //     headers: {
+            //         "Content-Type": "application/json",
+            //     },
+            //     body: JSON.stringify({ uid: attestationUID }),
+            // });
 
-            const result = await response.json();
-            console.log("Backend response:", result);
+            // const result = await response.json();
+            // console.log("Backend response:", result);
 
             return tx;
         } catch (error) {
