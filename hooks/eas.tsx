@@ -20,17 +20,26 @@ import { privateKeyToAccount } from "viem/accounts"
 const BUNDLER_PAYMASTER_URL = process.env.NEXT_PUBLIC_BUNDLER_PAYMASTER_RPC as string;
 const BUNDLER_URL = process.env.NEXT_PUBLIC_BUNDLER_URL as string;
 const PAYMASTER_URL = process.env.NEXT_PUBLIC_PAYMASTER_URL as string;
+const jiffyscanKey = process.env.NEXT_PUBLIC_JIFFYSCAN_API_KEY as string;
 const publicClient = createPublicClient({
     transport: http("https://rpc.open-campus-codex.gelato.digital"),
 })
 
 const paymasterClient = createPimlicoPaymasterClient({
     entryPoint: ENTRYPOINT_ADDRESS_V07,
-    transport: http(PAYMASTER_URL),
+    transport: http(PAYMASTER_URL, {
+                    fetchOptions: {
+                        headers: { "x-api-key": jiffyscanKey },
+                    },
+                }),
 })
 
 const pimlicoBundlerClient = createPimlicoBundlerClient({
-    transport: http(BUNDLER_URL),
+    transport: http(BUNDLER_URL, {
+                    fetchOptions: {
+                        headers: { "x-api-key": jiffyscanKey },
+                    },
+                }),
     entryPoint: ENTRYPOINT_ADDRESS_V07,
 })
 
@@ -121,7 +130,11 @@ const useEas = () => {
                     account: simpleAccount,
                     entryPoint: ENTRYPOINT_ADDRESS_V07,
                     chain: openCampusCodex,
-                    bundlerTransport: http(BUNDLER_URL),
+                    bundlerTransport: http(BUNDLER_URL, {
+                    fetchOptions: {
+                        headers: { "x-api-key": jiffyscanKey },
+                    },
+                }),
                     middleware: {
                         sponsorUserOperation: paymasterClient.sponsorUserOperation, // optional
                         gasPrice: async () => (await pimlicoBundlerClient.getUserOperationGasPrice()).fast, // if using pimlico bundler
