@@ -13,10 +13,10 @@ import { createPublicClient, decodeErrorResult, http } from "viem";
 import useUserWallets from "./useUserWallets";
 import { schema } from "../constants/constants";
 
-const schemaRegistryContractAddress = "0x4200000000000000000000000000000000000020"; // base sepolia
+const schemaRegistryContractAddress = "0xa5B27215410c4bb50e3Be57E5add89b0089Aa358"; // opencampus-codex
 const schemaRegistry = new SchemaRegistry(schemaRegistryContractAddress);
-const resolverAddress = "0x4200000000000000000000000000000000000020"; // base sepolia
-const eas = "0x4200000000000000000000000000000000000021" as `0x${string}`;
+// const resolverAddress = "0x4200000000000000000000000000000000000020"; // 
+const eas = "0x804199DD6A63e70424Db203b1Fa26b2FaaC1DC97" as `0x${string}`; // opencampus-codex
 const revocable = true;
 
 const useEas = () => {
@@ -150,7 +150,8 @@ const useEas = () => {
             })
         );
         const schemaEncoder = new SchemaEncoder(schema);
-        const schemaUID = getSchemaUID(schema, "0x0000000000000000000000000000000000000000", false) as `0x${string}`;
+        // const schemaUID = getSchemaUID(schema, "0x0000000000000000000000000000000000000000", false) as `0x${string}`;
+        const schemaUID = "0x77525ac84dee48aae1f655ca3285169ca0adfc435a4852388ddd50e66c90a1ef"
 
         console.log("schemaUID", schemaUID);
         console.log(github_url, maintainer_github_id, remark, contributor_github_id);
